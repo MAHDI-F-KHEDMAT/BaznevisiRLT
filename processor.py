@@ -198,8 +198,8 @@ def gather_configurations(links: List[str]) -> List[Dict[str, Union[str, int]]]:
     all_configs: List[Dict[str, Union[str, int]]] = []
     total_links = len(links)
 
-    # افزایش کارگران به 20 برای دریافت سریع‌تر
-    with concurrent.futures.ThreadPoolExecutor(max_workers=20) as executor:
+    # افزایش کارگران به 30 برای دریافت سریع‌تر
+    with concurrent.futures.ThreadPoolExecutor(max_workers=30) as executor: 
         future_to_url = {executor.submit(fetch_subscription_content, url): url for url in links}
         for i, future in enumerate(concurrent.futures.as_completed(future_to_url)):
             url = future_to_url[future]
@@ -259,8 +259,8 @@ def evaluate_and_sort_configs(configs: List[Dict[str, Union[str, int]]]) -> List
     logging.info("\n🔍 مرحله ۲/۳: انجام تست سریع TCP (Fast Fail) برای کانفیگ‌ها...")
     configs_to_process = configs[:MAX_CONFIGS_TO_TEST]
     
-    # افزایش کارگران برای تسریع تست‌ها
-    max_workers = 50 
+    # افزایش کارگران به 80 برای تسریع تست‌ها
+    max_workers = 80 
     passed_quick_check: List[Dict[str, Union[str, int]]] = []
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
         future_to_cfg = {executor.submit(quick_tcp_check, cfg): cfg for cfg in configs_to_process}
