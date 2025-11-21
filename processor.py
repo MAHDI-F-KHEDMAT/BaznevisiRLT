@@ -15,14 +15,12 @@ import logging
 from typing import List, Dict, Tuple, Optional, Set, Union
 
 # --- پیکربندی اولیه لاگ (Logging) ---
-# بهبود یافته: سیستم لاگ‌گیری استاندارد برای گزارش‌دهی بهتر
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(message)s', # فرمت ساده‌تر برای خوانایی
     datefmt='%H:%M:%S',
     stream=sys.stdout
 )
-# غیرفعال کردن لاگ‌های پرجزئیات از کتابخانه‌های دیگر
 logging.getLogger("requests").setLevel(logging.WARNING)
 logging.getLogger("urllib3").setLevel(logging.WARNING)
 
@@ -89,11 +87,11 @@ NUM_TCP_TESTS: int = 11
 MIN_SUCCESSFUL_TESTS_RATIO: float = 0.7
 QUICK_CHECK_TIMEOUT: int = 2
 MAX_CONFIGS_TO_TEST: int = 20000
-FINAL_MAX_OUTPUT_CONFIGS: int = 600
+# محدودیت تعداد کانفیگ خروجی نهایی حذف شد
+
 
 # --- الگوهای Regex ---
 SECURITY_KEYWORD: str = 'security=reality'
-# بهبود یافته: استفاده از re.VERBOSE برای خوانایی عالی Regex
 VLESS_PARSE_PATTERN: re.Pattern = re.compile(
     r"""
     vless://
@@ -128,7 +126,6 @@ def print_progress(iteration: int, total: int, prefix: str = '', suffix: str = '
 
 def parse_vless_config(config_str: str) -> Optional[Dict[str, Union[str, int]]]:
     """یک رشته کانفیگ VLESS Reality را پارس کرده و اجزای کلیدی آن را برمی‌گرداند."""
-    # بهبود یافته: search انعطاف‌پذیرتر از match است
     match = VLESS_PARSE_PATTERN.search(config_str)
     if match:
         parts = match.groupdict()
@@ -290,18 +287,20 @@ def evaluate_and_sort_configs(configs: List[Dict[str, Union[str, int]]]) -> List
     return evaluated_configs
 
 def save_results_base64(configs: List[Dict[str, Union[str, int, float]]]) -> None:
-    """کانفیگ‌های برتر را در یک فایل Base64 ذخیره می‌کند."""
+    """کانفیگ‌های ارزیابی‌شده را به ترتیب کیفیت در یک فایل Base64 ذخیره می‌کند."""
     if not configs:
         logging.info("\n😥 هیچ کانفیگ فعالی برای ذخیره یافت نشد.")
         return
 
-    top_configs = configs[:FINAL_MAX_OUTPUT_CONFIGS]
+    # تمام کانفیگ‌های ارزیابی‌شده را انتخاب می‌کند (بدون محدودیت)
+    final_output_configs = configs 
     
     final_configs_list = []
-    for i, cfg in enumerate(top_configs, start=1):
+    for i, cfg in enumerate(final_output_configs, start=1):
         # حذف نام قبلی و اضافه کردن شماره جدید
         config_without_comment = re.sub(r'#.*$', '', str(cfg['original_config'])).strip()
-        numbered_config = f"{config_without_comment}#⭐_{i:03d}"
+        # شماره‌گذاری جدید: #1، #2، #3، ...
+        numbered_config = f"{config_without_comment}#{i}" 
         final_configs_list.append(numbered_config)
     
     subscription_text = "\n".join(final_configs_list)
@@ -312,10 +311,11 @@ def save_results_base64(configs: List[Dict[str, Union[str, int, float]]]) -> Non
         output_path = os.path.join(OUTPUT_DIR, OUTPUT_FILENAME)
         with open(output_path, 'w', encoding='utf-8') as f:
             f.write(base64_sub)
-        logging.info(f"\n🎉 {len(top_configs)} کانفیگ برتر در فایل ذخیره شد: {output_path}")
+        logging.info(f"\n🎉 {len(final_output_configs)} کانفیگ با شماره‌گذاری ساده در فایل ذخیره شد: {output_path}") 
         
         logging.info("🏆 ۵ کانفیگ برتر (بر اساس جیتر و تأخیر):")
-        for i, cfg in enumerate(top_configs[:5], start=1):
+        # نمایش 5 کانفیگ برتر از کل لیست
+        for i, cfg in enumerate(final_output_configs[:5], start=1): 
             logging.info(
                 f"  {i}. {cfg['server']}:{cfg['port']} - "
                 f"تاخیر: {cfg.get('latency_ms', 0):.2f}ms, "
