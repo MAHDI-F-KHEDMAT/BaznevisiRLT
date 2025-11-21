@@ -154,6 +154,17 @@ def is_base64_content(s: str) -> bool:
         return True
     except (base64.binascii.Error, UnicodeDecodeError):
         return False
+    
+def is_ip_address(host: str) -> bool:
+    """بررسی می‌کند که آیا هاست یک آدرس IPv4 معتبر است یا خیر."""
+    try:
+        # socket.inet_aton تلاش می‌کند تا رشته را به یک آدرس شبکه باینری تبدیل کند
+        # اگر رشته یک آدرس IPv4 معتبر نباشد، ValueError یا OSError رخ می‌دهد.
+        socket.inet_aton(host)
+        return True
+    except (socket.error, ValueError):
+        return False
+
 
 # --- توابع اصلی برنامه ---
 def fetch_subscription_content(url: str) -> Optional[str]:
@@ -256,8 +267,13 @@ def measure_quality_metrics(config: Dict[str, Union[str, int]]) -> Optional[Dict
 
 def evaluate_and_sort_configs(configs: List[Dict[str, Union[str, int]]]) -> List[Dict[str, Union[str, int, float]]]:
     """کیفیت کانفیگ‌ها را در دو مرحله ارزیابی کرده و آنها را بر اساس کیفیت مرتب می‌کند."""
+    
+    # فیلتر جدید: فقط کانفیگ‌هایی با آدرس IP عددی را نگه می‌دارد
+    ip_configs = [cfg for cfg in configs if is_ip_address(str(cfg['server']))]
+    logging.info(f"🔢 {len(ip_configs)} کانفیگ با آدرس IP عددی باقی ماندند.")
+    
     logging.info("\n🔍 مرحله ۲/۳: انجام تست سریع TCP (Fast Fail) برای کانفیگ‌ها...")
-    configs_to_process = configs[:MAX_CONFIGS_TO_TEST]
+    configs_to_process = ip_configs[:MAX_CONFIGS_TO_TEST]
     
     # افزایش کارگران به 80 برای تسریع تست‌ها
     max_workers = 80 
