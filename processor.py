@@ -81,12 +81,12 @@ OUTPUT_FILENAME: str = os.getenv("REALITY_OUTPUT_FILENAME", "khanevadeh") + "_ba
 
 # --- زمان‌بندی‌ها و محدودیت‌ها ---
 REQUEST_TIMEOUT: int = 15
-FETCH_RETRIES: int = 4          # بهبود یافته: تعداد تلاش برای دریافت لینک‌ها
+FETCH_RETRIES: int = 2          
 TCP_CONNECT_TIMEOUT: int = 5
 NUM_TCP_TESTS: int = 11
 MIN_SUCCESSFUL_TESTS_RATIO: float = 0.7
 QUICK_CHECK_TIMEOUT: int = 2
-MAX_CONFIGS_TO_TEST: int = 990000
+MAX_CONFIGS_TO_TEST: int = 20000
 # محدودیت تعداد کانفیگ خروجی نهایی حذف شد
 
 
@@ -198,7 +198,8 @@ def gather_configurations(links: List[str]) -> List[Dict[str, Union[str, int]]]:
     all_configs: List[Dict[str, Union[str, int]]] = []
     total_links = len(links)
 
-    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+    # افزایش کارگران به 20 برای دریافت سریع‌تر
+    with concurrent.futures.ThreadPoolExecutor(max_workers=20) as executor:
         future_to_url = {executor.submit(fetch_subscription_content, url): url for url in links}
         for i, future in enumerate(concurrent.futures.as_completed(future_to_url)):
             url = future_to_url[future]
@@ -258,7 +259,8 @@ def evaluate_and_sort_configs(configs: List[Dict[str, Union[str, int]]]) -> List
     logging.info("\n🔍 مرحله ۲/۳: انجام تست سریع TCP (Fast Fail) برای کانفیگ‌ها...")
     configs_to_process = configs[:MAX_CONFIGS_TO_TEST]
     
-    max_workers = min(32, (os.cpu_count() or 1) + 4)
+    # افزایش کارگران برای تسریع تست‌ها
+    max_workers = 50 
     passed_quick_check: List[Dict[str, Union[str, int]]] = []
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
         future_to_cfg = {executor.submit(quick_tcp_check, cfg): cfg for cfg in configs_to_process}
@@ -299,7 +301,7 @@ def save_results_base64(configs: List[Dict[str, Union[str, int, float]]]) -> Non
     for i, cfg in enumerate(final_output_configs, start=1):
         # حذف نام قبلی و اضافه کردن شماره جدید
         config_without_comment = re.sub(r'#.*$', '', str(cfg['original_config'])).strip()
-        # شماره‌گذاری جدید: #1، #2، #3، ...
+        # شماره‌گذاری ساده: #1، #2، #3، ...
         numbered_config = f"{config_without_comment}#{i}" 
         final_configs_list.append(numbered_config)
     
