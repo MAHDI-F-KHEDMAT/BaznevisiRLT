@@ -81,12 +81,12 @@ OUTPUT_FILENAME: str = os.getenv("REALITY_OUTPUT_FILENAME", "khanevadeh") + "_ba
 
 # --- زمان‌بندی‌ها و محدودیت‌ها ---
 REQUEST_TIMEOUT: int = 15
-FETCH_RETRIES: int = 2          # بهبود یافته: تعداد تلاش برای دریافت لینک‌ها
+FETCH_RETRIES: int = 4          # بهبود یافته: تعداد تلاش برای دریافت لینک‌ها
 TCP_CONNECT_TIMEOUT: int = 5
 NUM_TCP_TESTS: int = 11
 MIN_SUCCESSFUL_TESTS_RATIO: float = 0.7
 QUICK_CHECK_TIMEOUT: int = 2
-MAX_CONFIGS_TO_TEST: int = 20000
+MAX_CONFIGS_TO_TEST: int = 990000
 # محدودیت تعداد کانفیگ خروجی نهایی حذف شد
 
 
